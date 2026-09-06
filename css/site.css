@@ -1,0 +1,715 @@
+/* ==========================================================================
+   NuruxData — Identity System (Premium Software & Institutional Design)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Nuancier Institutionnel & Premium */
+  --navy-950: #0A1322;
+  --navy-900: #0F1D33;
+  --navy-800: #172B4D;
+  --navy-700: #223E6C;
+  --navy-600: #2E538E;
+  
+  --gold-600: #B38E1B;
+  --gold-500: #D4AF37;
+  --gold-400: #E5C358;
+  --gold-100: #FAF3DF;
+  
+  --surface-base: #F8FAF9;
+  --surface-card: #FFFFFF;
+  --surface-dim: #EEF2F6;
+  
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --border-light: rgba(226, 232, 240, 0.8);
+  --border-strong: #CBD5E1;
+  
+  /* Status Colors (Émeraude, Rubis, Ambre) */
+  --green: #059669;
+  --green-bg: #ECFDF5;
+  --red: #DC2626;
+  --red-bg: #FEF2F2;
+  --amber: #D97706;
+  --amber-bg: #FFFBEB;
+  
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  
+  /* Elevating Shadows */
+  --shadow-subtle: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --shadow-card: 0 10px 25px -5px rgba(15, 29, 51, 0.05), 0 8px 10px -6px rgba(15, 29, 51, 0.03);
+  --shadow-hover: 0 20px 30px -10px rgba(15, 29, 51, 0.12);
+  --shadow-glow: 0 0 20px rgba(212, 175, 55, 0.25);
+
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Base Reset & Core Setup */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--surface-base);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--navy-950);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   1. ÉCRAN DE CONNEXION (SÉCURISÉ & VIP)
+   ========================================================================== */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 20%, var(--navy-800) 0%, var(--navy-950) 100%);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-wrap::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+  top: -100px;
+  right: -100px;
+  pointer-events: none;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 44px 38px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), var(--shadow-glow);
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.login-seal {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  margin: 0 auto 18px;
+  background: linear-gradient(135deg, var(--gold-100) 0%, var(--gold-500) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--navy-950);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.login-card h1 {
+  font-size: 22px;
+  color: var(--navy-950);
+  margin-bottom: 4px;
+}
+
+.login-card p.tag {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 28px;
+  font-weight: 500;
+}
+
+.login-card label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--navy-800);
+  margin: 16px 0 6px;
+  text-align: left;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  background: #FFFFFF;
+  color: var(--navy-950);
+  transition: all 0.2s ease;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
+}
+
+.login-btn {
+  width: 100%;
+  margin-top: 24px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 8px 16px rgba(15, 29, 51, 0.2);
+}
+
+.login-btn:hover {
+  background: var(--navy-950);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(15, 29, 51, 0.3);
+}
+
+.login-error {
+  color: var(--red);
+  font-size: 13px;
+  margin-top: 14px;
+  font-weight: 600;
+}
+
+.login-foot {
+  margin-top: 28px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--surface-dim);
+  padding-top: 16px;
+}
+
+/* ==========================================================================
+   2. BARRE EN-TÊTE (TOPBAR INSTITUTIONNELLE)
+   ========================================================================== */
+.topbar {
+  background: linear-gradient(90deg, var(--navy-950) 0%, var(--navy-900) 100%);
+  color: #FFFFFF;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.topbar .seal {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, var(--gold-100) 0%, var(--gold-500) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--navy-950);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.topbar .school-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.2px;
+}
+
+.topbar .school-sub {
+  font-size: 11px;
+  color: var(--gold-400);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 600;
+}
+
+.topbar .spacer {
+  flex: 1;
+}
+
+.logout-link {
+  color: var(--surface-card);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logout-link::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23E5C358' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.logout-link:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   3. PROFIL ÉLÈVE & BANNIÈRE
+   ========================================================================== */
+.student-banner {
+  max-width: 960px;
+  margin: 28px auto 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.student-photo {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 4px solid var(--surface-card);
+  box-shadow: var(--shadow-card);
+  background: var(--navy-800);
+  flex: 0 0 auto;
+}
+
+.student-photo.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-100);
+  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 24px;
+  background: linear-gradient(135deg, var(--navy-900), var(--navy-700));
+}
+
+.student-info h2 {
+  font-size: 22px;
+  color: var(--navy-950);
+  line-height: 1.2;
+}
+
+.student-info .meta {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 20px 80px;
+}
+
+/* ==========================================================================
+   4. NAVIGATION PAR ONGLETS (TABS)
+   ========================================================================== */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin: 24px 0 16px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--surface-dim);
+  padding-bottom: 12px;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-light);
+  background: var(--surface-card);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn:hover {
+  background: var(--surface-dim);
+  color: var(--navy-900);
+}
+
+.tab-btn.active {
+  background: var(--navy-900);
+  color: var(--surface-card);
+  border-color: var(--navy-900);
+  box-shadow: 0 4px 12px rgba(15, 29, 51, 0.25);
+}
+
+.tab-panel {
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   5. CARTES, NOTIFICATIONS & REMARQUES
+   ========================================================================== */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 22px 26px;
+  margin-bottom: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.card h3 {
+  font-size: 16px;
+  color: var(--navy-950);
+  margin-bottom: 8px;
+}
+
+.empty-note {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 16px;
+  font-style: italic;
+  font-size: 14px;
+  background: var(--surface-card);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong);
+}
+
+/* Cartes de Notifications */
+.notif-card {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.notif-ic {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold-100);
+  color: var(--navy-950);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23B38E1B' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 01-5.714 0' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 22px;
+}
+
+.notif-title {
+  font-weight: 700;
+  color: var(--navy-950);
+  font-size: 15px;
+}
+
+.notif-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.notif-msg {
+  font-size: 13.5px;
+  margin-top: 8px;
+  color: var(--text-main);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.notif-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  background: var(--surface-dim);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--navy-700);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* Lignes de Remarques Discipline / Conduite */
+.remark-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--surface-dim);
+}
+
+.remark-row:last-child {
+  border-bottom: none;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  flex: 0 0 auto;
+  margin-top: 5px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 1);
+}
+
+.dot.vert { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.dot.orange { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.dot.rouge { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+.remark-type {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--navy-950);
+}
+
+.remark-desc {
+  font-size: 13.5px;
+  margin-top: 3px;
+  color: var(--text-main);
+}
+
+.remark-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   6. BULLETINS & TABLEAUX DE NOTES
+   ========================================================================== */
+.bulletin-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.bulletin-avg {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--navy-950);
+  background: var(--gold-100);
+  padding: 4px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.bulletin-details {
+  margin-top: 18px;
+  display: none;
+  border-top: 1px solid var(--surface-dim);
+  padding-top: 16px;
+}
+
+.bulletin-details.open {
+  display: block;
+}
+
+/* Bouton Téléchargement PDF */
+.pdf-btn {
+  margin-top: 16px;
+  padding: 10px 18px;
+  border-radius: var(--radius-full);
+  background: var(--navy-900);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(15, 29, 51, 0.15);
+}
+
+.pdf-btn::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FFFFFF' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.pdf-btn:hover {
+  background: var(--navy-800);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 29, 51, 0.25);
+}
+
+/* Tableaux de notes */
+table.grade-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  margin-top: 12px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+table.grade-table th {
+  background: var(--navy-900);
+  color: #FFFFFF;
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 600;
+}
+
+table.grade-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--surface-dim);
+  color: var(--text-main);
+  background: var(--surface-card);
+}
+
+table.grade-table tr:last-child td {
+  border-bottom: none;
+}
+
+table.grade-table tr:nth-child(even) td {
+  background: #FAFBFD;
+}
+
+table.grade-table td.num {
+  text-align: center;
+  font-weight: 700;
+  color: var(--navy-950);
+}
+
+/* ==========================================================================
+   7. BANNIÈRE MODE HORS-LIGNE (OFFLINE)
+   ========================================================================== */
+.offline-banner {
+  background: linear-gradient(90deg, #D97706 0%, #B45309 100%);
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  display: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  letter-spacing: 0.2px;
+}
+
+.offline-banner.show {
+  display: block;
+}
+
+/* ==========================================================================
+   8. RESPONSIVE / MOBILES
+   ========================================================================== */
+@media (max-width: 640px) {
+  .topbar {
+    padding: 12px 16px;
+  }
+  
+  .topbar .school-name {
+    font-size: 15px;
+  }
+  
+  .student-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .student-info .meta {
+    justify-content: center;
+  }
+  
+  .tabs {
+    justify-content: center;
+  }
+  
+  .tab-btn {
+    padding: 8px 14px;
+    font-size: 12.5px;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+}

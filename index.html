@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace parents</title>
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<div id="offline-banner" class="offline-banner">Vous êtes hors ligne — les informations affichées peuvent ne pas être à jour.</div>
+
+<!-- ===================== Écran de connexion ===================== -->
+<div id="login-view" class="login-wrap">
+  <div class="login-card">
+    <div class="login-seal">👪</div>
+    <h1 id="school-name-display">Espace parents</h1>
+    <p class="tag">Suivez la scolarité de votre enfant : notifications, bulletins et remarques.</p>
+    <form id="login-form">
+      <label>Matricule de l'élève</label>
+      <input id="login-matricule" placeholder="Ex : EL-4821" autocomplete="off" required>
+      <label>Nom de famille de l'élève</label>
+      <input id="login-lastname" placeholder="Ex : MABIALA" autocomplete="off" required>
+      <button type="submit" class="login-btn">Accéder à l'espace parent</button>
+      <div id="login-error" class="login-error"></div>
+    </form>
+    <p class="login-foot">Le matricule et le nom de famille vous ont été communiqués par l'établissement lors de l'inscription de votre enfant.</p>
+  </div>
+</div>
+
+<!-- ===================== Espace parent (après connexion) ===================== -->
+<div id="dashboard-view" class="hidden">
+  <div class="topbar">
+    <div class="seal">👪</div>
+    <div>
+      <div class="school-name" id="school-name-top"></div>
+      <div class="school-sub">Espace parents</div>
+    </div>
+    <div class="spacer"></div>
+    <a href="#" id="logout-link" class="logout-link">Se déconnecter</a>
+  </div>
+
+  <div class="student-banner">
+    <div id="student-photo-wrap"></div>
+    <div class="student-info">
+      <h2 id="student-name"></h2>
+      <div class="meta" id="student-meta"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="notifs">Notifications</button>
+      <button class="tab-btn" data-tab="bulletins">Bulletins</button>
+      <button class="tab-btn" data-tab="remarks">Remarques</button>
+    </div>
+
+    <div class="tab-panel active" id="panel-notifs"><div id="notif-list"></div></div>
+    <div class="tab-panel" id="panel-bulletins"><div id="bulletin-list"></div></div>
+    <div class="tab-panel" id="panel-remarks"><div id="remark-list"></div></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/site.js"></script>
+<script>document.getElementById("school-name-top").textContent = SCHOOL_NAME;</script>
+</body>
+</html>
