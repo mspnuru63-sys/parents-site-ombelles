@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "nuruxdata-1"
-  }
+    "default": "ombelles-school"
+  },
+  "targets": {},
+  "etags": {}
 }
