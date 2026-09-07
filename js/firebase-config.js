@@ -11,7 +11,7 @@
    Voir le fichier GUIDE_INSTALLATION.md fourni avec ce site.
    =========================================================== */
 
-const firebaseConfig = {
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDnS5-jODKNWmWSeQ0ZjRLb0ShospzCzf0",
   authDomain: "ombelles-school.firebaseapp.com",
   projectId: "ombelles-school",
