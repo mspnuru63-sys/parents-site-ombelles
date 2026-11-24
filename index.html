@@ -4,28 +4,184 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Espace parents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/site.css">
+
+<!-- Styles de la page de connexion (même style que NuruxData) -->
+<style>
+  .lg-wrap {
+    --lg-navy: #0e1b3b;
+    --lg-navy-btn: #15264d;
+    --lg-gold: #d8ae48;
+    --lg-gold-logo: #c9a02c;
+    --lg-ink: #0e1b3b;
+    --lg-muted: #6b7280;
+    --lg-line: #d9d4c3;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    background: #fff;
+    font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--lg-ink);
+    overflow: auto;
+  }
+  .lg-wrap.hidden { display: none !important; }
+
+  /* ---------- Panneau gauche ---------- */
+  .lg-side {
+    position: relative;
+    overflow: hidden;
+    background: var(--lg-navy);
+    color: #fff;
+    padding: 46px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  .lg-side::after {
+    content: "";
+    position: absolute;
+    width: 640px;
+    height: 640px;
+    right: -190px;
+    bottom: -250px;
+    border-radius: 50%;
+    border: 60px solid rgba(255, 255, 255, 0.05);
+    pointer-events: none;
+  }
+  .lg-brand { display: flex; align-items: center; gap: 14px; position: relative; z-index: 1; }
+  .lg-logo {
+    width: 38px; height: 38px; border-radius: 9px;
+    background: var(--lg-gold-logo);
+    color: var(--lg-navy);
+    display: grid; place-items: center;
+    font-size: 24px; font-weight: 500;
+  }
+  .lg-brand-name { font-weight: 700; font-size: 16px; line-height: 1.2; }
+  .lg-brand-sub { font-size: 12px; color: #8d9bc4; margin-top: 2px; }
+
+  .lg-hero { margin: auto 0; max-width: 430px; position: relative; z-index: 1; padding: 40px 0; }
+  .lg-hero h2 {
+    font-size: 38px; line-height: 1.15; font-weight: 700;
+    letter-spacing: -0.01em; margin: 0 0 22px;
+  }
+  .lg-hero h2 span { color: var(--lg-gold); }
+  .lg-hero p { font-size: 14px; line-height: 1.55; margin: 0 0 28px; color: #e6e9f3; }
+
+  .lg-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+  .lg-points li { display: flex; align-items: flex-start; gap: 14px; font-size: 14px; line-height: 1.45; color: #e6e9f3; }
+  .lg-points svg { flex: none; width: 18px; height: 18px; margin-top: 1px; stroke: var(--lg-gold); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .lg-side-foot { position: relative; z-index: 1; font-size: 12px; color: #8d9bc4; }
+
+  /* ---------- Panneau droit ---------- */
+  .lg-main { display: flex; align-items: center; justify-content: center; padding: 40px 32px; background: #fff; }
+  .lg-form-box { width: 100%; max-width: 400px; }
+  .lg-form-box h1 { font-size: 24px; font-weight: 700; margin: 0 0 12px; color: var(--lg-ink); }
+  .lg-school { font-size: 14px; color: var(--lg-muted); margin: 0 0 30px; }
+
+  .lg-form-box label { display: block; font-size: 12.5px; font-weight: 600; color: #4a5575; margin: 0 0 8px; }
+  .lg-form-box input {
+    width: 100%; height: 36px; box-sizing: border-box;
+    padding: 0 12px; margin: 0 0 22px;
+    border: 1px solid var(--lg-line); border-radius: 8px;
+    background: #fff; color: var(--lg-ink);
+    font: inherit; font-size: 14px;
+  }
+  .lg-form-box input::placeholder { color: #a8aab3; }
+  .lg-form-box input:focus { outline: 2px solid var(--lg-gold); outline-offset: 1px; border-color: var(--lg-gold); }
+
+  .lg-btn {
+    width: 100%; height: 42px; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: 0; border-radius: 8px; cursor: pointer;
+    background: var(--lg-navy-btn); color: #fff;
+    font: inherit; font-size: 14px; font-weight: 600;
+  }
+  .lg-btn:hover { background: #1c3262; }
+  .lg-btn:focus-visible { outline: 2px solid var(--lg-gold); outline-offset: 2px; }
+  .lg-btn svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .lg-error { margin-top: 14px; font-size: 13px; color: #b42318; min-height: 18px; }
+  .lg-foot { margin: 22px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--lg-muted); }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 860px) {
+    .lg-wrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .lg-side { padding: 26px 24px; min-height: 0; }
+    .lg-hero { margin: 26px 0 8px; padding: 0; }
+    .lg-hero h2 { font-size: 26px; margin-bottom: 0; }
+    .lg-hero p, .lg-points, .lg-side-foot { display: none; }
+    .lg-side::after { width: 360px; height: 360px; right: -140px; bottom: -200px; border-width: 40px; }
+    .lg-main { align-items: flex-start; padding: 32px 24px 40px; }
+  }
+</style>
 </head>
 <body>
 
 <div id="offline-banner" class="offline-banner">Vous êtes hors ligne — les informations affichées peuvent ne pas être à jour.</div>
 
 <!-- ===================== Écran de connexion ===================== -->
-<div id="login-view" class="login-wrap">
-  <div class="login-card">
-    <div class="login-seal">👪</div>
-    <h1 id="school-name-display">Espace parents</h1>
-    <p class="tag">Suivez la scolarité de votre enfant : notifications, bulletins et remarques.</p>
-    <form id="login-form">
-      <label>Matricule de l'élève</label>
-      <input id="login-matricule" placeholder="Ex : EL-4821" autocomplete="off" required>
-      <label>Nom de famille de l'élève</label>
-      <input id="login-lastname" placeholder="Ex : MABIALA" autocomplete="off" required>
-      <button type="submit" class="login-btn">Accéder à l'espace parent</button>
-      <div id="login-error" class="login-error"></div>
-    </form>
-    <p class="login-foot">Le matricule et le nom de famille vous ont été communiqués par l'établissement lors de l'inscription de votre enfant.</p>
-  </div>
+<div id="login-view" class="lg-wrap">
+
+  <aside class="lg-side">
+    <div class="lg-brand">
+      <div class="lg-logo">N</div>
+      <div>
+        <div class="lg-brand-name">NuruxData</div>
+        <div class="lg-brand-sub">Espace parents</div>
+      </div>
+    </div>
+
+    <div class="lg-hero">
+      <h2>La scolarité de votre enfant, <span>suivie en un seul endroit.</span></h2>
+      <p>Notifications de l'établissement, bulletins et remarques des enseignants, à tout moment.</p>
+      <ul class="lg-points">
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span>Recevez les annonces et informations importantes de l'école.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>
+          <span>Consultez les bulletins de notes de votre enfant.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Lisez les remarques laissées par l'équipe pédagogique.</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="lg-side-foot" id="school-name-side"></div>
+  </aside>
+
+  <main class="lg-main">
+    <div class="lg-form-box">
+      <h1>Connexion</h1>
+      <p class="lg-school" id="school-name-display">Espace parents</p>
+
+      <form id="login-form">
+        <label for="login-matricule">Matricule de l'élève</label>
+        <input id="login-matricule" placeholder="Ex : EL-4821" autocomplete="off" required>
+
+        <label for="login-lastname">Nom de famille de l'élève</label>
+        <input id="login-lastname" placeholder="Ex : MABIALA" autocomplete="off" required>
+
+        <button type="submit" class="lg-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Se connecter
+        </button>
+        <div id="login-error" class="lg-error" role="alert"></div>
+      </form>
+
+      <p class="lg-foot">Le matricule et le nom de famille vous ont été communiqués par l'établissement lors de l'inscription de votre enfant.</p>
+    </div>
+  </main>
+
 </div>
 
 <!-- ===================== Espace parent (après connexion) ===================== -->
@@ -65,6 +221,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/site.js"></script>
-<script>document.getElementById("school-name-top").textContent = SCHOOL_NAME;</script>
+<script>
+  document.getElementById("school-name-top").textContent = SCHOOL_NAME;
+  document.getElementById("school-name-side").textContent = SCHOOL_NAME;
+  document.getElementById("school-name-display").textContent = SCHOOL_NAME;
+</script>
 </body>
 </html>
