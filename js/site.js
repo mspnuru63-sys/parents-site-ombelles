@@ -3,7 +3,8 @@
    =========================================================== */
 let db = null;
 let currentStudent = null;
-let unsubNotifs = null, unsubRemarks = null, unsubBulletins = null;
+let unsubNotifs = null, unsubRemarks = null, unsubBulletins = null, unsubPayments = null;
+let schoolSettings = {};
 
 /* Icône selon le type de notification envoyé par l'application (texte libre) */
 const NOTIF_ICONS = { paiement: "💰", reunion: "📣", sortie: "🚌", info: "ℹ️" };
@@ -264,9 +265,16 @@ async function loginWithMatricule(matricule, lastName, silent) {
     if (student.classId) {
       try {
         const c = await schoolRef().collection("classes").doc(String(student.classId)).get();
-        if (c.exists) student.className = c.data().name || "";
+        if (c.exists) { student.className = c.data().name || ""; student.monthlyFee = Number(c.data().monthlyFee) || 0; }
       } catch (e) { /* la classe reste "non renseignée" */ }
     }
+
+    /* Paramètres de l'école : année scolaire, mois de rentrée, devise */
+    schoolSettings = {};
+    try {
+      const st = await schoolRef().collection("settings").doc("school").get();
+      if (st.exists) schoolSettings = st.data() || {};
+    } catch (e) { /* valeurs par défaut */ }
 
     currentStudent = student;
     sessionStorage.setItem("parent_matricule", student.matricule);
@@ -283,6 +291,7 @@ function doLogout() {
   if (unsubNotifs) unsubNotifs();
   if (unsubRemarks) unsubRemarks();
   if (unsubBulletins) unsubBulletins();
+  if (unsubPayments) unsubPayments();
   currentStudent = null;
   document.getElementById("dashboard-view").classList.add("hidden");
   document.getElementById("login-view").classList.remove("hidden");
@@ -307,6 +316,7 @@ function enterDashboard(student) {
   listenNotifications(student);
   listenRemarks(student);
   listenBulletins(student);
+  listenPayments(student);
 }
 
 /* -------- Notifications (temps réel) -------- */
@@ -386,4 +396,129 @@ function listenBulletins(student) {
 }
 function toggleBulletin(idx) {
   document.getElementById("bulletin-details-" + idx).classList.toggle("open");
+}
+
+
+/* =========================================================
+   Paiements : progression annuelle + reçu de chaque mois
+   ========================================================= */
+const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+function monthLabelFR(k) { if (!k) return "—"; const [y, m] = k.split("-").map(Number); return MONTH_NAMES[m - 1] + " " + y; }
+function shiftMonth(k, n) {
+  const [y, m] = k.split("-").map(Number);
+  const d = new Date(y, m - 1 + n, 1);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+/* Mois de l'année scolaire : de la rentrée (octobre par défaut) à juin */
+function schoolMonthsList() {
+  const m = String(schoolSettings.schoolYear || "").match(/(\d{4})/);
+  const y = m ? Number(m[1]) : new Date().getFullYear();
+  const start = Number(schoolSettings.startMonth || 10);
+  const to = (y + 1) + "-06";
+  const out = [];
+  let k = y + "-" + String(start).padStart(2, "0"), guard = 0;
+  while (k <= to && guard++ < 60) { out.push(k); k = shiftMonth(k, 1); }
+  return out;
+}
+function money(n) {
+  return Math.round(Number(n) || 0).toLocaleString("fr-FR").replace(/[\u202f\u00a0]/g, " ") + " " + (schoolSettings.currency || "FCFA");
+}
+/* Scolarité mensuelle (les autres frais — inscription, tenue… — ne font pas avancer la jauge) */
+function isTuition(p) { return p.kind ? p.kind === "scolarite" : norm(p.label).includes("scolarite"); }
+
+function listenPayments(student) {
+  if (unsubPayments) unsubPayments();
+  const box = document.getElementById("payment-list");
+  unsubPayments = schoolRef().collection("payments")
+    .where("studentId", "==", student.id)
+    .onSnapshot((snap) => {
+      const pays = [];
+      snap.forEach((d) => pays.push(d.data()));
+      pays.sort((a, b) => ((b.date || "") + (b.time || "")).localeCompare((a.date || "") + (a.time || "")));
+      window.__payCache = pays;
+      renderPayments(box, student, pays);
+    }, () => { box.innerHTML = `<p class="empty-note">Impossible de charger les paiements (vérifiez votre connexion).</p>`; });
+}
+
+function renderPayments(box, student, pays) {
+  const months = schoolMonthsList(), monthSet = new Set(months);
+  const fee = Number(student.monthlyFee) || 0;
+  const du = fee * months.length;
+  const verse = pays.filter((p) => isTuition(p) && monthSet.has(p.month)).reduce((t, p) => t + (Number(p.amount) || 0), 0);
+  const reste = Math.max(0, du - verse);
+  const pct = du > 0 ? Math.min(100, Math.round((verse / du) * 100)) : 0;
+  const color = pct >= 75 ? "#1f7a4d" : pct >= 35 ? "#b7791f" : "#b3261e";
+  const r = 64, circ = 2 * Math.PI * r, off = circ - (pct / 100) * circ;
+
+  const summary = `
+    <div class="card pay-summary">
+      <div class="pay-title">Progression annuelle de la scolarité (${months.length} mois)</div>
+      <div class="pay-gauge-row">
+        <div class="pay-ring">
+          <svg viewBox="0 0 160 160" aria-hidden="true">
+            <circle cx="80" cy="80" r="${r}" fill="none" stroke="#ece9e2" stroke-width="14"/>
+            <circle cx="80" cy="80" r="${r}" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="${circ}" stroke-dashoffset="${off}" transform="rotate(-90 80 80)"/>
+          </svg>
+          <div class="pay-ring-text" style="color:${color}">${pct}%</div>
+        </div>
+        <div class="pay-figures">
+          <div class="pay-big">${money(verse)} versés</div>
+          ${fee > 0
+            ? `<div>Total annuel dû : <b>${money(du)}</b></div>
+               <div>Restant à verser : <b style="color:${reste > 0 ? "#b3261e" : "#1f7a4d"}">${money(reste)}</b></div>`
+            : `<div class="pay-muted">La scolarité mensuelle de la classe n'est pas encore renseignée par l'établissement.</div>`}
+        </div>
+      </div>
+    </div>`;
+
+  const extra = Array.from(new Set(pays.map((p) => p.month).filter((k) => k && !monthSet.has(k)))).sort();
+  const monthsHTML = months.concat(extra).map((k) => {
+    const list = pays.filter((p) => p.month === k);
+    const tuition = list.filter(isTuition).reduce((t, p) => t + (Number(p.amount) || 0), 0);
+    const inYear = monthSet.has(k) && fee > 0;
+    const badge = !inYear ? "" : tuition <= 0 ? '<span class="pay-stamp bad">Non payé</span>' : tuition >= fee ? '<span class="pay-stamp ok">Payé</span>' : '<span class="pay-stamp warn">Partiel</span>';
+    const mp = inYear ? Math.min(100, Math.round((tuition / fee) * 100)) : null;
+    const rows = list.length ? list.map((p) => `
+        <div class="pay-row">
+          <div class="pay-row-main">
+            <div class="pay-row-label">${escapeHTML(p.label || "Paiement")}</div>
+            <div class="pay-row-meta">${p.receiptNo ? "Reçu " + escapeHTML(p.receiptNo) + " · " : ""}${fmtDate(p.date)}${p.mode ? " · " + escapeHTML(p.mode) : ""}</div>
+          </div>
+          <div class="pay-row-amt">${money(p.amount)}</div>
+          <button class="pdf-btn" onclick="downloadReceiptPDF(window.__payCache[${pays.indexOf(p)}])">⬇ Reçu</button>
+        </div>`).join("") : `<div class="pay-muted">Aucun paiement ce mois.</div>`;
+    return `<div class="pay-month">
+      <div class="pay-mh"><b>${monthLabelFR(k)}</b>
+        <span class="pay-right">${badge}<span class="pay-amt">${money(tuition)}${monthSet.has(k) && fee > 0 ? " / " + money(fee) : ""}${mp != null ? " · " + mp + "%" : ""}</span></span>
+      </div>${rows}</div>`;
+  }).join("");
+
+  box.innerHTML = summary + `<div class="card">
+    <div class="pay-title">Paiements par mois · ${pays.length} reçu(s)</div>${monthsHTML}</div>`;
+}
+
+function buildReceiptDocHTML(p) {
+  const s = currentStudent || {};
+  return `<div class="doc">
+    ${docHeadHTML()}
+    <div class="doc-title">Reçu de paiement${p.receiptNo ? " N° " + escapeHTML(p.receiptNo) : ""}</div>
+    <div class="doc-grid">
+      <div class="doc-field"><span class="k">Élève</span><span class="v">${escapeHTML(studentFullName(s))}</span></div>
+      <div class="doc-field"><span class="k">Matricule</span><span class="v">${escapeHTML(s.matricule || "—")}</span></div>
+      <div class="doc-field"><span class="k">Classe</span><span class="v">${escapeHTML(s.className || "—")}</span></div>
+      <div class="doc-field"><span class="k">Date du paiement</span><span class="v">${fmtDate(p.date)}</span></div>
+      <div class="doc-field"><span class="k">Mois concerné</span><span class="v">${monthLabelFR(p.month)}</span></div>
+      <div class="doc-field"><span class="k">Mode de paiement</span><span class="v">${escapeHTML(p.mode || "—")}</span></div>
+    </div>
+    <table class="doc-table">
+      <thead><tr><th>Motif</th><th class="num">Montant</th></tr></thead>
+      <tbody><tr><td>${escapeHTML(p.label || "Paiement")}</td><td class="num">${money(p.amount)}</td></tr></tbody>
+      <tfoot><tr class="total-row"><td>Total reçu</td><td class="num">${money(p.amount)}</td></tr></tfoot>
+    </table>
+    <div class="doc-footer">Document généré depuis l'espace parents — ${escapeHTML(SCHOOL_NAME)}</div>
+  </div>`;
+}
+function downloadReceiptPDF(p) {
+  openPrintable("Reçu " + (p.receiptNo || "") + " - " + studentFullName(currentStudent), buildReceiptDocHTML(p));
 }

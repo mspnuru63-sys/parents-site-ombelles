@@ -193,3 +193,53 @@ body {
   .container { padding: 18px 16px 48px; }
   .card { padding: 16px; }
 }
+
+/* ---------- Paiements ---------- */
+.pay-title {
+  color: #a97c1b; font-size: 11.5px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px;
+}
+.pay-gauge-row { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.pay-ring { position: relative; flex: none; width: 120px; height: 120px; }
+.pay-ring svg { width: 120px; height: 120px; display: block; }
+.pay-ring-text {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 22px; font-weight: 700;
+}
+.pay-figures { flex: 1; min-width: 190px; display: grid; gap: 4px; font-size: 14px; }
+.pay-big { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+.pay-muted { color: var(--muted); font-size: 12.5px; }
+
+.pay-month {
+  background: #f9f8f5; border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; margin-bottom: 10px;
+}
+.pay-month:last-child { margin-bottom: 0; }
+.pay-mh { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.pay-mh b { font-size: 15px; }
+.pay-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pay-amt { color: var(--muted); font-size: 12.5px; }
+.pay-stamp {
+  display: inline-block; border-radius: 999px; padding: 3px 12px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+}
+.pay-stamp.bad { background: #f8e3e1; color: #b3261e; }
+.pay-stamp.ok { background: var(--ok-bg); color: var(--ok); }
+.pay-stamp.warn { background: #fbefd5; color: #9a6a12; }
+
+.pay-row {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; margin-top: 8px;
+}
+.pay-row-main { flex: 1; min-width: 0; }
+.pay-row-label { font-weight: 600; }
+.pay-row-meta { color: var(--muted); font-size: 12.5px; }
+.pay-row-amt { font-weight: 700; white-space: nowrap; }
+.pay-row .pdf-btn { margin-top: 0; white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .pay-row { flex-wrap: wrap; }
+  .pay-row-main { flex-basis: 100%; }
+  .pay-row-amt { flex: 1; }
+}
