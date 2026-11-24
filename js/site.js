@@ -5,15 +5,26 @@ let db = null;
 let currentStudent = null;
 let unsubNotifs = null, unsubRemarks = null, unsubBulletins = null;
 
-const NOTIF_TYPE_LABELS = {
-  paiement: "Avis de paiement",
-  reunion: "Convocation / réunion",
-  sortie: "Sortie scolaire",
-  info: "Information générale",
-};
-const NOTIF_ICONS = {
-  paiement: "💰", reunion: "📣", sortie: "🚌", info: "ℹ️",
-};
+/* Icône selon le type de notification envoyé par l'application (texte libre) */
+const NOTIF_ICONS = { paiement: "💰", reunion: "📣", sortie: "🚌", info: "ℹ️" };
+function notifKind(type) {
+  const t = norm(type);
+  if (t.includes("paiement")) return "paiement";
+  if (t.includes("reunion") || t.includes("convocation")) return "reunion";
+  if (t.includes("sortie")) return "sortie";
+  return "info";
+}
+
+/* Comparaison tolérante : majuscules, accents et espaces ignorés */
+function norm(s) {
+  return String(s == null ? "" : s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+function studentFullName(s) { return (((s && s.prenom) || "") + " " + ((s && s.nom) || "")).trim(); }
+/* Même chemin que l'application NuruxData : ecoles/{code établissement}/... */
+function schoolRef() { return db.collection("ecoles").doc(SCHOOL_CODE); }
+/* Les notes sont envoyées sur 20 ; on les ramène au barème du bulletin (10 ou 20) */
+function toBar(v, scale) { return v == null || v === "" ? null : Number(v) * (Number(scale) || 20) / 20; }
+
 
 function escapeHTML(str) {
   return String(str == null ? "" : str)
@@ -119,9 +130,9 @@ function docHeadHTML() {
 function downloadNotificationPDF(n) {
   const html = `<div class="doc">
     ${docHeadHTML()}
-    <div class="doc-title">${escapeHTML(NOTIF_TYPE_LABELS[n.notifType] || "Notification")}</div>
+    <div class="doc-title">${escapeHTML(n.type || "Notification")}</div>
     <div class="doc-grid">
-      <div class="doc-field"><span class="k">Élève</span><span class="v">${escapeHTML((currentStudent.firstName || "") + " " + (currentStudent.lastName || ""))}</span></div>
+      <div class="doc-field"><span class="k">Élève</span><span class="v">${escapeHTML(studentFullName(currentStudent))}</span></div>
       <div class="doc-field"><span class="k">Date</span><span class="v">${fmtDate(n.date)}</span></div>
     </div>
     <h3 style="font-size:14px;color:#0F1D33;margin-bottom:6px">${escapeHTML(n.title)}</h3>
@@ -134,33 +145,36 @@ function downloadNotificationPDF(n) {
    l'identique pour l'aperçu à l'écran ET pour le PDF, afin que les deux
    soient rigoureusement identiques (aucune divergence possible). -------- */
 function buildBulletinDocHTML(b) {
-  const rowsSubjects = b.subjectGrades ? `
-    <table class="doc-table"><thead><tr><th>Matière</th><th class="num">Note</th><th>Appréciation</th></tr></thead>
-    <tbody>${b.subjectGrades.map(g => `<tr><td>${escapeHTML(g.subject)}</td><td class="num">${g.note != null ? fmtNote(g.note) + " / " + (g.scale || 20) : "—"}</td><td>${escapeHTML(g.appreciation || "—")}</td></tr>`).join("")}</tbody>
-    <tfoot><tr class="total-row"><td colspan="2">Moyenne générale</td><td class="num">${b.average != null ? fmtNote(b.average) + " / 20" : "—"}</td></tr></tfoot></table>` : "";
-  const rowsTerms = b.termAverages ? `
-    <table class="doc-table"><thead><tr><th>Trimestre</th><th class="num">Moyenne /20</th></tr></thead>
-    <tbody>${b.termAverages.map((m, i) => `<tr><td>Trimestre ${i + 1}</td><td class="num">${m != null ? fmtNote(m) : "—"}</td></tr>`).join("")}</tbody>
-    <tfoot><tr class="total-row"><td>Moyenne annuelle</td><td class="num">${b.average != null ? fmtNote(b.average) : "—"}</td></tr></tfoot></table>` : "";
+  const sc = Number(b.scale) || 20;
+  const hasCoef = Array.isArray(b.subjects) && b.subjects.some((g) => g.coef != null);
+  const rowsSubjects = (Array.isArray(b.subjects) && b.subjects.length) ? `
+    <table class="doc-table"><thead><tr><th>Matière</th>${hasCoef ? '<th class="num">Coef.</th>' : ""}<th class="num">Moyenne</th><th>Appréciation</th></tr></thead>
+    <tbody>${b.subjects.map((g) => `<tr><td>${escapeHTML(g.name)}</td>${hasCoef ? `<td class="num">${g.coef != null ? escapeHTML(g.coef) : "—"}</td>` : ""}<td class="num">${g.average20 != null ? fmtNote(toBar(g.average20, sc)) + " / " + sc : "—"}</td><td>${escapeHTML(g.appreciation || "—")}</td></tr>`).join("")}</tbody>
+    <tfoot><tr class="total-row"><td colspan="${hasCoef ? 2 : 1}">Moyenne générale</td><td class="num">${b.average20 != null ? fmtNote(toBar(b.average20, sc)) + " / " + sc : "—"}</td><td></td></tr></tfoot></table>` : "";
+  const hasTerms = b.t1 !== undefined || b.t2 !== undefined || b.t3 !== undefined;
+  const rowsTerms = hasTerms ? `
+    <table class="doc-table"><thead><tr><th>Trimestre</th><th class="num">Moyenne /${sc}</th></tr></thead>
+    <tbody>${[b.t1, b.t2, b.t3].map((m, i) => `<tr><td>Trimestre ${i + 1}</td><td class="num">${m != null ? fmtNote(toBar(m, sc)) : "—"}</td></tr>`).join("")}</tbody>
+    <tfoot><tr class="total-row"><td>Moyenne annuelle</td><td class="num">${b.average20 != null ? fmtNote(toBar(b.average20, sc)) : "—"}</td></tr></tfoot></table>` : "";
   return `<div class="doc doc-bulletin">
     ${docHeadHTML()}
-    <div class="doc-title">Bulletin — ${escapeHTML(b.term || "")}</div>
+    <div class="doc-title">Bulletin — ${escapeHTML(b.periodLabel || "")}</div>
     <div class="doc-grid">
-      <div class="doc-field"><span class="k">Élève</span><span class="v">${escapeHTML(b.studentName || "")}</span></div>
+      <div class="doc-field"><span class="k">Élève</span><span class="v">${escapeHTML(studentFullName(currentStudent))}</span></div>
       <div class="doc-field"><span class="k">Classe</span><span class="v">${escapeHTML(b.className || "")}</span></div>
-      <div class="doc-field"><span class="k">Année scolaire</span><span class="v">${escapeHTML(b.academicYear || "—")}</span></div>
+      <div class="doc-field"><span class="k">Année scolaire</span><span class="v">${escapeHTML(b.schoolYear || "—")}</span></div>
       <div class="doc-field"><span class="k">Publié le</span><span class="v">${fmtDate(b.publishedAt)}</span></div>
     </div>
     ${rowsSubjects}${rowsTerms}
     <div class="doc-grid" style="margin-top:8px">
-      <div class="doc-field"><span class="k">Rang</span><span class="v">${b.rang > 0 ? b.rang + " / " + (b.effectif || "—") : "—"}</span></div>
-      <div class="doc-field"><span class="k">Appréciation générale</span><span class="v" style="font-style:italic">${escapeHTML(b.mention || "—")}</span></div>
+      <div class="doc-field"><span class="k">Rang</span><span class="v">${b.rank > 0 ? b.rank + " / " + (b.classSize || "—") : "—"}</span></div>
+      <div class="doc-field"><span class="k">Appréciation générale</span><span class="v" style="font-style:italic">${escapeHTML(b.appreciation || "—")}</span></div>
     </div>
     <div class="doc-footer">Document généré depuis l'espace parents — ${escapeHTML(SCHOOL_NAME)}</div>
   </div>`;
 }
 function downloadBulletinPDF(b) {
-  openPrintable(`Bulletin - ${b.studentName || ""}`, buildBulletinDocHTML(b));
+  openPrintable(`Bulletin - ${studentFullName(currentStudent)}`, buildBulletinDocHTML(b));
 }
 
 /* -------- Rend PRINT_CSS utilisable à l'écran (pas seulement dans la fenêtre
@@ -231,18 +245,36 @@ async function loginWithMatricule(matricule, lastName, silent) {
   showLoginError("");
   if (!db) return showLoginError("Le site n'est pas encore configuré. Contactez l'établissement.");
   try {
-    const doc = await db.collection("schools").doc(SCHOOL_CODE).collection("students").doc(matricule).get();
-    if (!doc.exists) { if (!silent) showLoginError("Aucun élève trouvé avec ce matricule."); return; }
-    const student = doc.data();
-    if (!silent && lastName && student.lastName && student.lastName.toLowerCase().trim() !== lastName.toLowerCase().trim()) {
+    const studentsCol = schoolRef().collection("students");
+    /* Recherche par matricule (l'identifiant du document est un code interne, pas le matricule) */
+    let snap = await studentsCol.where("matricule", "==", matricule).get();
+    if (snap.empty && matricule.toUpperCase() !== matricule) snap = await studentsCol.where("matricule", "==", matricule.toUpperCase()).get();
+    if (snap.empty) { if (!silent) showLoginError("Aucun élève trouvé avec ce matricule."); return; }
+
+    /* Si plusieurs fiches ont le même matricule, celle dont le nom correspond est retenue */
+    const found = snap.docs.map((d) => d.data());
+    const student = (lastName && found.find((s) => norm(s.nom) === norm(lastName))) || found[0];
+    if (!silent && lastName && norm(student.nom) !== norm(lastName)) {
       showLoginError("Le nom de famille ne correspond pas à ce matricule.");
       return;
     }
+
+    /* Nom de la classe : l'application n'envoie que l'identifiant de classe sur la fiche élève */
+    student.className = "";
+    if (student.classId) {
+      try {
+        const c = await schoolRef().collection("classes").doc(String(student.classId)).get();
+        if (c.exists) student.className = c.data().name || "";
+      } catch (e) { /* la classe reste "non renseignée" */ }
+    }
+
     currentStudent = student;
-    sessionStorage.setItem("parent_matricule", matricule);
+    sessionStorage.setItem("parent_matricule", student.matricule);
     enterDashboard(student);
   } catch (e) {
-    showLoginError("Connexion impossible : vérifiez votre accès internet et réessayez.");
+    console.warn("Connexion :", e);
+    if (e && e.code === "permission-denied") showLoginError("Accès refusé par la base de données : les règles Firestore doivent autoriser la lecture.");
+    else showLoginError("Connexion impossible : vérifiez votre accès internet et réessayez.");
   }
 }
 
@@ -268,10 +300,8 @@ function enterDashboard(student) {
   document.getElementById("dashboard-view").classList.remove("hidden");
 
   const photoWrap = document.getElementById("student-photo-wrap");
-  photoWrap.innerHTML = student.photo
-    ? `<img class="student-photo" src="${student.photo}" alt="Photo">`
-    : `<div class="student-photo placeholder">${initials(student.firstName, student.lastName)}</div>`;
-  document.getElementById("student-name").textContent = `${student.firstName || ""} ${student.lastName || ""}`.trim();
+  photoWrap.innerHTML = `<div class="student-photo placeholder">${escapeHTML(initials(student.prenom, student.nom))}</div>`;
+  document.getElementById("student-name").textContent = studentFullName(student);
   document.getElementById("student-meta").textContent = `${student.className || "Classe non renseignée"} · Matricule ${student.matricule}`;
 
   listenNotifications(student);
@@ -283,18 +313,19 @@ function enterDashboard(student) {
 function listenNotifications(student) {
   if (unsubNotifs) unsubNotifs();
   const box = document.getElementById("notif-list");
-  unsubNotifs = db.collection("schools").doc(SCHOOL_CODE).collection("notifications")
+  unsubNotifs = schoolRef().collection("notifications")
     .onSnapshot((snap) => {
       let list = [];
       snap.forEach((d) => list.push(d.data()));
-      list = list.filter((n) => !n.targetLabel || n.targetLabel === "Toute l'école" || n.targetLabel === student.className);
+      /* target = "all" (toute l'école) ou l'identifiant d'une classe */
+      list = list.filter((n) => !n.target || n.target === "all" || n.target === student.classId);
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       window.__notifCache = list;
       box.innerHTML = list.length ? list.map((n, idx) => `
         <div class="card notif-card">
-          <div class="notif-ic">${NOTIF_ICONS[n.notifType] || "ℹ️"}</div>
+          <div class="notif-ic">${NOTIF_ICONS[notifKind(n.type)]}</div>
           <div style="flex:1">
-            <div class="notif-badge">${escapeHTML(NOTIF_TYPE_LABELS[n.notifType] || n.notifType || "")}</div>
+            <div class="notif-badge">${escapeHTML(n.type || "Information")}</div>
             <div class="notif-title">${escapeHTML(n.title)}</div>
             <div class="notif-date">${fmtDate(n.date)}</div>
             <div class="notif-msg">${escapeHTML(n.message)}</div>
@@ -308,8 +339,8 @@ function listenNotifications(student) {
 function listenRemarks(student) {
   if (unsubRemarks) unsubRemarks();
   const box = document.getElementById("remark-list");
-  unsubRemarks = db.collection("schools").doc(SCHOOL_CODE).collection("remarks")
-    .where("studentMatricule", "==", student.matricule)
+  unsubRemarks = schoolRef().collection("remarks")
+    .where("studentId", "==", student.id)
     .onSnapshot((snap) => {
       let list = [];
       snap.forEach((d) => list.push(d.data()));
@@ -319,8 +350,8 @@ function listenRemarks(student) {
           <div class="dot ${escapeHTML(r.severity || "vert")}"></div>
           <div>
             <div class="remark-type">${escapeHTML(r.type || "Remarque")}</div>
-            <div class="remark-desc">${escapeHTML(r.description || "")}</div>
-            <div class="remark-date">${fmtDate(r.date)}${r.by ? " · " + escapeHTML(r.by) : ""}</div>
+            <div class="remark-desc">${escapeHTML(r.text || "")}</div>
+            <div class="remark-date">${fmtDate(r.date)}${r.author ? " · " + escapeHTML(r.author) : ""}</div>
           </div>
         </div>`).join("")}</div>` : `<p class="empty-note">Aucune remarque enregistrée pour le moment.</p>`;
     }, () => { box.innerHTML = `<p class="empty-note">Impossible de charger les remarques (vérifiez votre connexion).</p>`; });
@@ -330,8 +361,8 @@ function listenRemarks(student) {
 function listenBulletins(student) {
   if (unsubBulletins) unsubBulletins();
   const box = document.getElementById("bulletin-list");
-  unsubBulletins = db.collection("schools").doc(SCHOOL_CODE).collection("bulletins")
-    .where("studentMatricule", "==", student.matricule)
+  unsubBulletins = schoolRef().collection("bulletins")
+    .where("studentId", "==", student.id)
     .onSnapshot((snap) => {
       let list = [];
       snap.forEach((d) => list.push(d.data()));
@@ -341,10 +372,10 @@ function listenBulletins(student) {
         <div class="card">
           <div class="bulletin-head" onclick="toggleBulletin(${idx})">
             <div>
-              <h3>${escapeHTML(b.term || "Bulletin")}</h3>
+              <h3>${escapeHTML(b.periodLabel || "Bulletin")}</h3>
               <div class="notif-date">${escapeHTML(b.className || "")} · Publié le ${fmtDate(b.publishedAt)}</div>
             </div>
-            <div class="bulletin-avg">${b.average != null ? fmtNote(b.average) + "/20" : "—"}</div>
+            <div class="bulletin-avg">${b.average20 != null ? fmtNote(toBar(b.average20, b.scale)) + "/" + (Number(b.scale) || 20) : "—"}</div>
           </div>
           <div class="bulletin-details" id="bulletin-details-${idx}">
             <div class="doc-preview-wrap">${buildBulletinDocHTML(b)}</div>
