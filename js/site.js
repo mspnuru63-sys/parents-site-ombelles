@@ -3,7 +3,8 @@
    =========================================================== */
 let db = null;
 let currentStudent = null;
-let unsubNotifs = null, unsubRemarks = null, unsubBulletins = null, unsubPayments = null;
+let unsubNotifs = null, unsubRemarks = null, unsubBulletins = null, unsubPayments = null, unsubMessages = null;
+let activeTab = "notifs";
 let schoolSettings = {};
 
 /* Icône selon le type de notification envoyé par l'application (texte libre) */
@@ -292,6 +293,7 @@ function doLogout() {
   if (unsubRemarks) unsubRemarks();
   if (unsubBulletins) unsubBulletins();
   if (unsubPayments) unsubPayments();
+  if (unsubMessages) unsubMessages();
   currentStudent = null;
   document.getElementById("dashboard-view").classList.add("hidden");
   document.getElementById("login-view").classList.remove("hidden");
@@ -302,6 +304,8 @@ function doLogout() {
 function switchTab(tab) {
   document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + tab));
+  activeTab = tab;
+  if (tab === "messages") { updateMsgBadge(window.__msgs || []); scrollChat(); }
 }
 
 function enterDashboard(student) {
@@ -317,6 +321,7 @@ function enterDashboard(student) {
   listenRemarks(student);
   listenBulletins(student);
   listenPayments(student);
+  listenMessages(student);
 }
 
 /* -------- Notifications (temps réel) -------- */
@@ -521,4 +526,79 @@ function buildReceiptDocHTML(p) {
 }
 function downloadReceiptPDF(p) {
   openPrintable("Reçu " + (p.receiptNo || "") + " - " + studentFullName(currentStudent), buildReceiptDocHTML(p));
+}
+
+
+/* =========================================================
+   Messages : discussion avec l'établissement
+   ========================================================= */
+function chatTime(iso) { const d = new Date(iso); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+function msgSeenKey() { return "parent_msg_seen_" + (currentStudent ? currentStudent.id : ""); }
+function getSeen() { try { return localStorage.getItem(msgSeenKey()) || ""; } catch (e) { return ""; } }
+function setSeen(v) { try { localStorage.setItem(msgSeenKey(), v); } catch (e) { /* ignoré */ } }
+
+/* Pastille « nouveaux messages » sur l'onglet */
+function updateMsgBadge(list) {
+  const b = document.getElementById("msg-badge");
+  if (!b) return;
+  const latest = list.length ? list[list.length - 1].createdAt : "";
+  if (activeTab === "messages") { if (latest) setSeen(latest); b.classList.add("hidden"); return; }
+  const seen = getSeen();
+  const n = list.filter((m) => m.from === "school" && (m.createdAt || "") > seen).length;
+  b.textContent = n;
+  b.classList.toggle("hidden", !n);
+}
+function scrollChat() { const b = document.getElementById("chat-body"); if (b) b.scrollTop = b.scrollHeight; }
+
+function renderChat(list) {
+  const body = document.getElementById("chat-body");
+  if (!body) return;
+  const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 80;
+  let day = "", html = "";
+  list.forEach((m) => {
+    const d = (m.createdAt || "").slice(0, 10);
+    if (d !== day) { day = d; html += `<div class="chat-day">${fmtDate(d)}</div>`; }
+    const mine = m.from === "parent";
+    html += `<div class="chat-b ${mine ? "out" : "in"}"><div class="chat-bubble">${escapeHTML(m.text)}</div><div class="chat-meta">${mine ? "Vous" : escapeHTML(m.author || "Établissement")} · ${chatTime(m.createdAt)}</div></div>`;
+  });
+  body.innerHTML = html || `<div class="chat-empty">Aucun message pour le moment. Écrivez à l'établissement ci-dessous.</div>`;
+  if (atBottom || activeTab === "messages") body.scrollTop = body.scrollHeight;
+}
+
+function sendParentMessage() {
+  const inp = document.getElementById("chat-input");
+  const text = (inp.value || "").trim();
+  if (!text || !currentStudent) return;
+  const ref = schoolRef().collection("messages").doc();
+  const msg = { id: ref.id, studentId: currentStudent.id, from: "parent", text, createdAt: new Date().toISOString(), author: currentStudent.parentName || ("Parent de " + studentFullName(currentStudent)) };
+  inp.value = "";
+  ref.set(msg).catch(() => { inp.value = text; alert("Le message n'a pas pu être envoyé. Vérifiez votre connexion et réessayez."); });
+}
+
+function listenMessages(student) {
+  if (unsubMessages) unsubMessages();
+  const box = document.getElementById("message-box");
+  box.innerHTML = `<div class="card chat-card">
+      <div class="chat-body" id="chat-body"></div>
+      <div class="chat-composer">
+        <textarea id="chat-input" rows="2" maxlength="1000" placeholder="Écrivez votre message à l'établissement… (Ctrl + Entrée pour envoyer)"></textarea>
+        <button type="button" id="chat-send" class="chat-send">Envoyer</button>
+      </div>
+    </div>`;
+  document.getElementById("chat-send").addEventListener("click", sendParentMessage);
+  document.getElementById("chat-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendParentMessage(); } });
+
+  unsubMessages = schoolRef().collection("messages")
+    .where("studentId", "==", student.id)
+    .onSnapshot((snap) => {
+      const list = [];
+      snap.forEach((d) => list.push(d.data()));
+      list.sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+      window.__msgs = list;
+      renderChat(list);
+      updateMsgBadge(list);
+    }, () => {
+      const body = document.getElementById("chat-body");
+      if (body) body.innerHTML = `<div class="chat-empty">Impossible de charger les messages (vérifiez votre connexion).</div>`;
+    });
 }
