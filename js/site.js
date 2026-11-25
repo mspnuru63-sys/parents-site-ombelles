@@ -266,7 +266,12 @@ async function loginWithMatricule(matricule, lastName, silent) {
     if (student.classId) {
       try {
         const c = await schoolRef().collection("classes").doc(String(student.classId)).get();
-        if (c.exists) { student.className = c.data().name || ""; student.monthlyFee = Number(c.data().monthlyFee) || 0; }
+        if (c.exists) {
+          student.className = c.data().name || "";
+          student.classFee = Number(c.data().monthlyFee) || 0;
+          student.reduction = Math.min(Math.max(0, Number(student.reduction) || 0), student.classFee);
+          student.monthlyFee = Math.max(0, student.classFee - student.reduction);
+        }
       } catch (e) { /* la classe reste "non renseignée" */ }
     }
 
@@ -471,7 +476,8 @@ function renderPayments(box, student, pays) {
           <div class="pay-big">${money(verse)} versés</div>
           ${fee > 0
             ? `<div>Total annuel dû : <b>${money(du)}</b></div>
-               <div>Restant à verser : <b style="color:${reste > 0 ? "#b3261e" : "#1f7a4d"}">${money(reste)}</b></div>`
+               <div>Restant à verser : <b style="color:${reste > 0 ? "#b3261e" : "#1f7a4d"}">${money(reste)}</b></div>
+               ${student.reduction > 0 ? `<div class="pay-muted">Réduction accordée : ${money(student.reduction)} par mois (mensualité de ${money(fee)} au lieu de ${money(student.classFee)}).</div>` : ""}`
             : `<div class="pay-muted">La scolarité mensuelle de la classe n'est pas encore renseignée par l'établissement.</div>`}
         </div>
       </div>
